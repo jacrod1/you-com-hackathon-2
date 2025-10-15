@@ -1,0 +1,16 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug you-com-hackathon",
+      "skipFiles": ["<node_internals>/**"],
+      "program": "${workspaceFolder}/src/index.js",
+      "args": ["locksmith", "--region", "Wisconsin", "--limit", "20"],
+      "envFile": "${workspaceFolder}/.env",
+      "runtimeArgs": ["--inspect"],
+      "console": "integratedTerminal"
+    }
+  ]
+}

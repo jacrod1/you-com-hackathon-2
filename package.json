@@ -1,0 +1,19 @@
+{
+  "name": "leadfinder-handrolled-websites",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "description": "CLI that finds niche, hand-built small business websites and scores them for rebuild urgency.",
+  "scripts": {
+    "start": "node src/index.js",
+    "scan": "node src/index.js --niche locksmith --regions Iowa,Wisconsin --max 80"
+  },
+  "dependencies": {
+    "cheerio": "^1.1.2",
+    "csv-stringify": "^6.6.0",
+    "dotenv": "^16.4.5",
+    "he": "^1.2.0",
+    "node-fetch": "^3.3.2",
+    "yargs": "^17.7.2"
+  }
+}
