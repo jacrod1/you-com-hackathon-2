@@ -27,13 +27,37 @@ const LIMIT = argv.limit;
 (async function main(){
     fs.mkdirSync(path.join(__dirname,'..','out','outreach'), { recursive:true });
 
-    //build some queries
-    const base = [
-        `${NICHE} "home page" -site:yelp.com -site:facebook.com -site:wordpress.com -site:wix.com -site:squarespace.com filetype:html`,
-        `"${NICHE}" "welcome to our website" -site:facebook.com -site:wordpress.com -site:wix.com filetype:html`,
-        `"${NICHE}" inurl:index.html -site:wixsite.com -site:wordpress.com -site:squarespace.com`,
-    ];
-    if (REGION) base.push(`"${NICHE}" "${REGION}" "home page" -site:facebook.com -site:wordpress.com -site:wix.com filetype:html`);
+    //build some queries - legacy approach
+    // const base = [
+    //     `${NICHE} "home page" -site:yelp.com -site:facebook.com -site:wordpress.com -site:wix.com -site:squarespace.com filetype:html`,
+    //     `"${NICHE}" "welcome to our website" -site:facebook.com -site:wordpress.com -site:wix.com filetype:html`,
+    //     `"${NICHE}" inurl:index.html -site:wixsite.com -site:wordpress.com -site:squarespace.com`,
+    // ];
+    // if (REGION) base.push(`"${NICHE}" "${REGION}" "home page" -site:facebook.com -site:wordpress.com -site:wix.com filetype:html`);
+
+const base = [];
+
+    // Natural language queries that find actual businesses
+    if (REGION) {
+        base.push(
+            `small local ${NICHE} business in ${REGION}`,
+            `family owned ${NICHE} services ${REGION}`,
+            `${NICHE} near me ${REGION} phone number`,
+            `independent ${NICHE} ${REGION} reviews`
+        );
+    } else {
+        base.push(
+            `small local ${NICHE} business`,
+            `family owned ${NICHE} services`,
+            `independent ${NICHE} company phone number`,
+            `local ${NICHE} reviews testimonials`
+        );
+    }
+
+    // Add one technical query to catch old sites
+    base.push(`${NICHE} -site:yelp.com -site:facebook.com -site:thumbtack.com -site:angi.com`);
+    //end new natural language query
+
 
     console.log('\n - Running you.com queries:\n');
     base.forEach((q, i) => console.log(`${i + 1}. ${q}`));
@@ -49,7 +73,22 @@ const LIMIT = argv.limit;
     const domains = uniqueDomains(hits).slice(0, LIMIT);
 
     //pull content
-    const contents = await youContents(domains.map(d => d.url));
+    console.log(`\n Fetching content for ${domains.length} domains..`);
+    console.log('Domains:', domains.map(d => d.url).slice(0, 5)); //show first 5
+
+    let contents =[];
+    try {
+        contents = await youContents(domains.map(d => d.url));
+        console.log(`Got content for ${contents.length} pages`);
+   } catch (error) {
+    console.error('Failed to fetch contents:', error.message);
+    contents = [];
+   }
+
+   if (!Array.isArray(contents)) {
+    console.error('Contents is not an array:', typeof contents);
+    contents = []
+   }
 
     const rows = [];
     for (const doc of contents) {
@@ -64,7 +103,7 @@ const LIMIT = argv.limit;
         const contact = detectContactSignals($);
         const legacy = detectLegacy(doc.html || '', $);
 
-        const crust = computeCust({legacy, httpOnly});
+        const crust = computeCrust({legacy, httpOnly});
         const cscore = contactWeak(contact);
         const urg = urgency({ crust, contactScore: cscore, cms });
 
