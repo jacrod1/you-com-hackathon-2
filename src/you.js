@@ -11,45 +11,70 @@ export async function youSearch(query, count = 25) {
         query,
         count: String(count)
     });
-        
-    const r = await fetch(`${BASE}/search?${params.toString()}`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': KEY },
-        
-    });
-
-    const raw = await r.text();
-
-    if (!r.ok) {
-        throw new Error(`Search failed ${r.status} ${raw.slice(0,200)}`);
-    }
-
-    let j;
+    
+    const url = `${BASE}/search?${params.toString()}`;
+    
     try {
-        j = JSON.parse(raw);
-    } catch (e) {
-        throw new Error(`Non-JSON response: ${raw.slice(0,300)}`);
+        const r = await fetch(url, {
+            method: 'GET',
+            headers: { 
+                'Content-Type': 'application/json', 
+                'x-api-key': KEY 
+            },
+        });
+
+        // Check if body has already been used (shouldn't happen, but let's be safe)
+        if (r.bodyUsed) {
+            throw new Error('Response body was already consumed before we could read it');
+        }
+
+        const raw = await r.text();
+
+        if (!r.ok) {
+            throw new Error(`Search failed ${r.status}: ${raw.slice(0, 200)}`);
+        }
+
+        let j;
+        try {
+            j = JSON.parse(raw);
+        } catch (e) {
+            throw new Error(`Non-JSON response: ${raw.slice(0, 300)}`);
+        }
+
+        const results =
+            (Array.isArray(j?.results) && j.results) ||
+            (Array.isArray(j?.web?.results) && j.web.results) ||
+            (Array.isArray(j?.items) && j.items) ||
+            [];
+
+        return results.map(x => ({
+            url: x.url || x.link || '',
+            title: x.title || x.name || '',
+            snippet: x.snippet || x.description || ''
+        }));
+    } catch (error) {
+        console.error(`Error fetching ${url}:`, error.message);
+        throw error;
     }
-
-    const results =
-        (Array.isArray(j?.results) && j.results) ||
-        (Array.isArray(j?.web?.results) && j.web.results) ||
-        (Array.isArray(j?.items) && j.items) ||
-        [];
-
-    return results.map(x => ({
-        url: x.url || x.link || '',
-        title: x.title || x.name || '',
-        snippet: x.snippet || x.description || ''
-    }));
 }
+
 export async function youContents(urls = []) {
     if (!urls.length) return [];
+    
     const r = await fetch(`${BASE}/content`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': KEY },
-        body: JSON.stringify({urls, format: 'html' })
+        headers: { 
+            'Content-Type': 'application/json', 
+            'x-api-key': KEY 
+        },
+        body: JSON.stringify({ urls, format: 'html' })
     });
-    if (!r.ok) throw new Error(`Contents failed ${r.status}`);
-    return await r.json();
+    
+    const raw = await r.text();
+    
+    if (!r.ok) {
+        throw new Error(`Contents failed ${r.status}: ${raw.slice(0, 200)}`);
+    }
+    
+    return JSON.parse(raw);
 }
