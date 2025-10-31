@@ -1,7 +1,7 @@
 import fetch from 'node-fetch';
 import 'dotenv/config';
 
-const BASE = 'https://api.ydc-index.io/v1';
+const BASE = 'https://api.ydc-index.io/';
 const KEY = process.env.YOU_API_KEY;
 
 if (!KEY) throw new Error('Missing YOU_API_KEY in .env');
@@ -12,7 +12,7 @@ export async function youSearch(query, count = 25) {
         count: String(count)
     });
     
-    const url = `${BASE}/search?${params.toString()}`;
+    const url = `${BASE}v1/search?${params.toString()}`;
     
     try {
         const r = await fetch(url, {
@@ -84,7 +84,7 @@ export async function youContents(urls = []) {
         console.log(`📡 Fetching batch ${i + 1}/${batches.length} (${batch.length} URLs)...`);
         
         try {
-            const r = await fetch(`${BASE}/contents`, {
+            const r = await fetch(`${BASE}v1/contents`, {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json', 
@@ -122,4 +122,49 @@ export async function youContents(urls = []) {
     
     console.log(`✅ Total: Got ${allResults.length} content items`);
     return allResults;
+}
+
+export async function youNews(query, count = 5) {
+    // Remove count from params - API doesn't support it
+    const params = new URLSearchParams({
+        query
+        // ❌ Removed: count: String(count)
+    });
+    
+    const url = `${BASE}news?${params.toString()}`;
+    
+    console.log(`📰 Fetching news for: ${query}`);
+    
+    try {
+        const r = await fetch(url, {
+            method: 'GET',
+            headers: { 
+                'X-API-Key': KEY
+            }
+        });
+
+        const raw = await r.text();
+        
+        if (!r.ok) {
+            console.warn(`⚠️ News API returned ${r.status}`);
+            return [];
+        }
+
+        const j = JSON.parse(raw);
+        const results = (Array.isArray(j?.news?.results) && j.news.results) || [];
+        
+        console.log(`✅ Found ${results.length} news articles`);
+        
+        // ✅ Slice the results client-side to respect the count parameter
+        return results.slice(0, count).map(x => ({
+            title: x.title || '',
+            description: x.description || '',
+            url: x.url || '',
+            age: x.age || '',
+            source: x.source_name || ''
+        }));
+    } catch (error) {
+        console.warn(`⚠️ News fetch failed: ${error.message}`);
+        return [];
+    }
 }

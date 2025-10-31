@@ -3,7 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-import { youSearch, youContents} from './you.js';
+import { youSearch, youContents, youNews } from './you.js';
 import { uniqueDomains, load, isHttpUrl, toSlug } from './util.js';
 import { detectCMS, detectContactSignals, detectLegacy } from './detector.js';
 import { computeCrust, contactWeak, urgency } from './score.js';
@@ -131,6 +131,10 @@ function isAggregator(url) {
         return true;
     })
 
+    console.log('Fetching news');
+    const news = await youNews(`${NICHE} ${REGION || ''} industry trends challenges`, 3);
+
+
     const domains = uniqueDomains(filtered).slice(0, LIMIT);
 
     //pull content
@@ -207,7 +211,7 @@ ${doc.html || ''}`;
         });
 
         // write an email
-        const draft = outreach({ domain, title, crust, cscore: cscore, httpOnly, contact, niche:NICHE, region:REGION});
+        const draft = outreach({ domain, title, crust, cscore: cscore, httpOnly, contact, niche:NICHE, region:REGION, news});
         const outPath = path.join(__dirname,'..','out','outreach', `${domain}.txt`);
         fs.writeFileSync(outPath, draft, 'utf8');
     }
@@ -235,16 +239,24 @@ function safeDomain(u) {
 
 function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 
-function outreach({ domain, title, crust, cscore, httpOnly, contact, niche, region }) {
+function outreach({ domain, title, crust, cscore, httpOnly, contact, niche, region, news = [] }) {
     const bits = [];
     if (httpOnly) bits.push('no HTTPS');
     if (cscore >= 60) bits.push('no clear Contact link');
     const flagLine = bits.length ? `I noticed ${bits.join(' and ')}.` : `I noticed a few quick fixes that could help.`;
     const loc = region ? ` in ${region}` : '';
+
+    let newsContext = '';
+    if (news && news.length > 0) {
+        const recentNews = news[0];
+        newsContext = `\n\nWith ${recentNews.title.toLowerCase()}, having a modern, mobile-optimized web presence is more important than ever for ${niche} businesses.`;
+    }
+
     return [
         `Subject: Quick modern refresh for ${domain}`,
         ``,
         `Hi there - I came across ${title || domain}${loc}. ${flagLine}`,
+        newsContext,
         `I build ultra-fast, mobile-friendly sites for local ${niche} - with tap-to-call, a simple contact form, map & hours.`,
         `If you're interested, I'll spin up a free live preview using my minimal templates so you can click around before deciding.`,
         `Thanks!`,
