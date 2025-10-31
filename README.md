@@ -1,4 +1,4 @@
-# 🕵️‍♂️ Hand-Rolled Website Finder  
+# Crusty Website Finder  
 **Find outdated, hand-coded small business websites using the You.com Search & Content APIs.**
 
 This project automatically discovers and scores old-school, non-CMS business websites (e.g., local locksmiths, dance studios, landscapers) that might be great candidates for a modern rebuild.  
@@ -19,7 +19,7 @@ It uses the **You.com API** to search the open web, retrieve full HTML, analyze 
 
 ## 🧩 Example Output
 ```
-Found 12 promising hand-rolled sites.
+Found 12 promising crusty sites.
 → out/prospects.csv, out/prospects.json, out/outreach/*.txt
 
 example-locksmith.com     Crust: 72   CMS: unknown   HTTPS: no

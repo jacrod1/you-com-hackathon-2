@@ -222,7 +222,7 @@ ${doc.html || ''}`;
     fs.writeFileSync(path.join(outDir,'prospects.json'), JSON.stringify(rows, null, 2));
     await writeCSV(path.join(outDir,'prospects.csv'), rows);
 
-    console.log(`\n✅ Found ${rows.length} promising hand-rolled sites.`);
+    console.log(`\n✅ Found ${rows.length} promising crusty sites.`);
     console.log(`📂 Outputs:`);
     console.log(`   - out/prospects.csv (ranked list)`);
     console.log(`   - out/prospects.json (structured data)`);
